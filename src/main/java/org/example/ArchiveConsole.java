@@ -17,13 +17,19 @@ public class ArchiveConsole extends JFrame {
 
     private JTextField searchField;
 
+    private JTextArea logArea;  // For logging messages
+  //  private JButton automationButton1, automationButton2; // Buttons for automation options
 
 
-    public ArchiveConsole() {
+
+
+    public ArchiveConsole () {
         setTitle("Archive Console");
-        setSize(900, 600);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setLayout(new BorderLayout());
+        setLocationRelativeTo(null);
+
 
         // Top panel for search functionality
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -36,6 +42,8 @@ public class ArchiveConsole extends JFrame {
         add(searchPanel, BorderLayout.NORTH);
 
         // Initialize JTable with column headers and set Boolean type for "On Loan" to display as checkbox
+
+
         model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -45,7 +53,7 @@ public class ArchiveConsole extends JFrame {
         };
 
         // Initialize JTable with column headers
-        model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0);
+       // model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0);
         table = new JTable(model);
         JScrollPane tablePane = new JScrollPane(table);
         add(tablePane, BorderLayout.CENTER);
@@ -104,6 +112,75 @@ public class ArchiveConsole extends JFrame {
 
         add(detailsPanel, BorderLayout.EAST);
 
+
+        // Bottom panel using JSplitPane
+//        JSplitPane bottomPanel = new JSplitPane();
+//        bottomPanel.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+//        bottomPanel.setResizeWeight(0.5);  // Adjusts the weight for resizing
+        //JPanel bottomPanel = new JPanel(new BorderLayout());
+        JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        //JPanel leftPanel = new JPanel();
+        JPanel leftPanel = createLeftPanel();
+
+        leftPanel.setBackground(Color.LIGHT_GRAY); // Example color for visibility
+        bottomSplitPane.setLeftComponent(leftPanel); // Set left component
+
+        // Right side panel for AutomationPanel
+//        AutomationPanel automationPanel = new AutomationPanel();
+//        bottomSplitPane.setRightComponent(automationPanel);
+
+        // Right side panel for AutomationPanel
+        JPanel automationPanel = createAutomationPanel(); // Ensure this is initialized
+
+        if (leftPanel != null) {
+            bottomSplitPane.setLeftComponent(leftPanel); // Set the left component
+        } else {
+            System.err.println("Error: Left panel is null.");
+        }
+        if (automationPanel != null) { // Null check for safety
+            bottomSplitPane.setRightComponent(automationPanel); // Set right component
+        } else {
+            System.err.println("Error: Automation panel is null.");
+        }
+        // Null check for safety
+        bottomSplitPane.setRightComponent(automationPanel); // Set right component
+
+        // Set resize weight to distribute space; e.g., 0.7 means 70% left, 30% right
+        bottomSplitPane.setResizeWeight(0.7);  // Adjusts the weight for resizing
+    // Add the custom automation panel to the right side of the split pane
+        //AutomationPanel automationPanel = new AutomationPanel();
+        //bottomSplitPane.setRightComponent(automationPanel);
+
+        // Add the bottom split pane to the main frame
+        add(bottomSplitPane, BorderLayout.SOUTH);
+
+
+
+        // Set resize weight to adjust space allocation between components
+        bottomSplitPane.setResizeWeight(0.7);
+
+        // Add the bottom split pane to the main frame
+       // add(bottomSplitPane, BorderLayout.SOUTH);
+
+        // Add the bottom split pane to the main frame
+        //add(bottomSplitPane, BorderLayout.SOUTH);
+
+        // Left side for log area
+        logArea = new JTextArea(10, 30);
+        logArea.setEditable(false);
+        JScrollPane logScrollPane = new JScrollPane(logArea);
+        bottomSplitPane.setLeftComponent(logScrollPane);
+
+        bottomSplitPane.setRightComponent(automationPanel);
+
+        // Add the bottom panel to the frame
+        add(bottomSplitPane, BorderLayout.SOUTH);
+
+
+        // Enable checkbox rendering and editing for Boolean values
+        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
+
         // Bottom panel for sorting buttons with "Sort" text
         JPanel sortPanel = new JPanel();
         sortPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -123,13 +200,77 @@ public class ArchiveConsole extends JFrame {
         sortPanel.add(sortByAuthorButton);
         sortPanel.add(sortByBarcodeButton);
 
-        add(sortPanel, BorderLayout.SOUTH);
+        add(sortPanel, BorderLayout.NORTH);
 
         // Enable checkbox rendering and editing for Boolean values
         table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
         table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
 
     }
+
+    private JPanel createLeftPanel() {
+        JPanel leftPanel = new JPanel();
+        leftPanel.setBackground(Color.LIGHT_GRAY);
+        leftPanel.add(new JLabel("Left Panel Content"));
+        return leftPanel;
+    }
+
+    private JPanel createAutomationPanel() {
+        // Creating the panel for automation actions
+        JPanel automationPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Add labels and buttons as needed in your automation panel
+        JLabel label = new JLabel("Automation Action Request for the Item above:");
+        gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 0;
+        automationPanel.add(label, gbc);
+
+        // Row 1 buttons
+        JButton retrieveButton = new JButton("Retrieve");
+        gbc.gridwidth = 1; gbc.gridx = 0; gbc.gridy = 1;
+        automationPanel.add(retrieveButton, gbc);
+
+        JButton removeButton = new JButton("Remove");
+        gbc.gridx = 1; gbc.gridy = 1;
+        automationPanel.add(removeButton, gbc);
+
+        // Row 2 buttons
+        JButton returnButton = new JButton("Return");
+        gbc.gridx = 0; gbc.gridy = 2;
+        automationPanel.add(returnButton, gbc);
+
+        JButton addButton = new JButton("Add to Collection");
+        gbc.gridx = 1; gbc.gridy = 2;
+        automationPanel.add(addButton, gbc);
+
+        // Sort Section label and text field
+        JLabel sortLabel = new JLabel("Sort Section:");
+        gbc.gridx = 0; gbc.gridy = 3;
+        automationPanel.add(sortLabel, gbc);
+
+        JTextField sortField = new JTextField(5);
+        gbc.gridx = 1; gbc.gridy = 3;
+        automationPanel.add(sortField, gbc);
+
+        // Sort buttons
+        JButton randomSortButton = new JButton("Random Collection Sort");
+        gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 4;
+        automationPanel.add(randomSortButton, gbc);
+
+        JButton mostlySortedSortButton = new JButton("Mostly Sorted Sort");
+        gbc.gridy = 5;
+        automationPanel.add(mostlySortedSortButton, gbc);
+
+        JButton reverseOrderSortButton = new JButton("Reverse Order Sort");
+        gbc.gridy = 6;
+        automationPanel.add(reverseOrderSortButton, gbc);
+
+        return automationPanel;
+    }
+
+
 
     private void searchCDs() {
         String searchText = searchField.getText().toLowerCase();  // Get the text entered in the search box and convert it to lowercase
@@ -238,7 +379,7 @@ public class ArchiveConsole extends JFrame {
 
         model.addRow(new Object[]{title, author, section, x, y, barcode, description, onLoan});
 
-        saveDataToFile("CD_ArchivePrototype_SampleData.txt");
+        saveDataToFile("data_output.txt");
     }
 
     private void saveDataToFile(String fileName) {
@@ -282,6 +423,5 @@ public class ArchiveConsole extends JFrame {
 
 
 
-// CDTableModel class to handle table data
 
 
