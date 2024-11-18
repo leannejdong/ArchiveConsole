@@ -2,7 +2,7 @@ package org.example;
 
 
 // Class to represent a CD entry
-class CD {
+public class CD {
     private String title, author, section, description;
     private long barcode;
     private int x, y;

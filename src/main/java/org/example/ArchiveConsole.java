@@ -18,70 +18,151 @@ public class ArchiveConsole extends JFrame {
     private JTextField searchField;
 
     private JTextArea logArea;  // For logging messages
-  //  private JButton automationButton1, automationButton2; // Buttons for automation options
 
 
+    private ArchiveConsole parentConsole;
+    private ProcessLogPanel processLogPanel;
 
 
-    public ArchiveConsole () {
+    public ArchiveConsole (/*ArchiveConsole parentConsole*/) {
+       // this.parentConsole = parentConsole;
         setTitle("Archive Console");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //setLayout(new BorderLayout());
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(new BoarderLayout());
+
+        // Initialize table with columns and empty data
+        String[] columnNames = {"Title", "Author", "Barcode", "Year", "Publisher", "Category", "Pages", "Selected"};
+        Object[][] data = {}; // Replace with actual data if available
+        table = new JTable(data, columnNames);
+        table.setFillsViewportHeight(true);
+
+        // Add table to a scroll pane
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        add(tableScrollPane, BorderLayout.CENTER);
+
+        // Enable checkbox rendering and editing for Boolean values
+        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
 
 
-        // Top panel for search functionality
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        searchPanel.add(new JLabel("Search String:"));
-        searchField = new JTextField(20);  // Search box
-        searchPanel.add(searchField);
-        JButton searchButton = new JButton("Search");
-        searchButton.addActionListener(e -> searchCDs());
-        searchPanel.add(searchButton);
-        add(searchPanel, BorderLayout.NORTH);
 
-        // Initialize JTable with column headers and set Boolean type for "On Loan" to display as checkbox
+// Table initialization (assumed)
+
+        // Bottom panel for sorting buttons
+        JPanel sortPanel = new JPanel(new FlowLayout());
+
+        JButton sortByTitleButton = new JButton("By Title");
+        sortByTitleButton.addActionListener(e -> sortByTitle());
+
+        JButton sortByAuthorButton = new JButton("By Author");
+        sortByAuthorButton.addActionListener(e -> sortByAuthor());
+
+        JButton sortByBarcodeButton = new JButton("By Barcode");
+        sortByBarcodeButton.addActionListener(e -> sortByBarcode());
+
+        sortPanel.add(sortByTitleButton);
+        sortPanel.add(sortByAuthorButton);
+        sortPanel.add(sortByBarcodeButton);
 
 
-        model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0) {
-            @Override
-            public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 7) return Boolean.class;
-                return super.getColumnClass(columnIndex);
-            }
-        };
+        add(sortPanel, BorderLayout.SOUTH);
 
-        // Initialize JTable with column headers
-       // model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0);
-        table = new JTable(model);
-        JScrollPane tablePane = new JScrollPane(table);
-        add(tablePane, BorderLayout.CENTER);
+        // Enable checkbox rendering and editing for Boolean values
+        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
+        // initialize components
+        initSearchPanel();
+        initTable();
+        initDetailsPanel();
+        initBottomPanel();
 
-        // Load data from file (create a sample file manually if not exists)
         loadDataFromFile("data.txt");
+        populateTableWithData();
 
-        // Table listener to display CD details when clicked
-        table.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                int selectedRow = table.getSelectedRow();
-                displayCDDetails(selectedRow);
-            }
+        processLogPanel = new ProcessLogPanel();
+        add(processLogPanel, BorderLayout.SOUTH);
+
+        JButton automationConsoleButton = new JButton("Open Automation Console");
+        automationConsoleButton.addActionListener(e -> launchAutomationConsole());
+
+        JPanel mainPanel = new JPanel(/*new BorderLayout()*/);
+        mainPanel.add(automationConsoleButton);
+        add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void launchAutomationConsole(){
+        SwingUtilities.invokeLater(()->{
+            new AutomationControl(this).setVisible(true);
         });
+    }
 
+    private void populateTableWithData() {
+        model.setRowCount(0);
+        for(CD cd : cdList) {
+            model.addRow(new Object[]{
+                    cd.getTitle(),
+                    cd.getAuthor(),
+                    cd.getSection(),
+                    cd.getX(),
+                    cd.getY(),
+                    cd.getBarcode(),
+                    cd.getDescription(),
+                    cd.isOnLoan()
+            });
+        }
+    }
 
-//        // Initialize the table model with the CD list
-//        cdTableModel = new CDTableModel(cdList);
-//        table = new JTable(cdTableModel);
+    private void initBottomPanel() {
+       JSplitPane bottomPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
-        // Table listener to display CD details when clicked
-        table.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                int selectedRow = table.getSelectedRow();
-                displayCDDetails(selectedRow);
-            }
-        });
+       ProcessLogPanel processLogPanel = new ProcessLogPanel();
+       bottomPanel.setLeftComponent(processLogPanel);
 
+//
+//       logArea = new JTextArea(10,30);
+//       logArea.setEditable(false);
+//       JScrollPane logScrollPane = new JScrollPane(logArea);
+//       bottomPanel.setLeftComponent(logScrollPane);
+
+       JPanel automationPanel = createAutomationPanel();
+       bottomPanel.setRightComponent(automationPanel);
+
+       bottomPanel.setResizeWeight(0.7);
+       add(bottomPanel, BorderLayout.SOUTH);
+
+        // Inside the ArchiveConsole constructor or initialization method
+
+// Create the bottom panel for sorting buttons
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Use FlowLayout to arrange buttons neatly
+// Add the "Sort" label
+        JLabel sortLabel = new JLabel("Sort:");
+        sortPanel.add(sortLabel);
+        JButton sortByTitleButton = new JButton("By Title");
+        sortByTitleButton.addActionListener(e -> sortByTitle());
+
+        JButton sortByAuthorButton = new JButton("By Author");
+        sortByAuthorButton.addActionListener(e -> sortByAuthor());
+
+        JButton sortByBarcodeButton = new JButton("By Barcode");
+        sortByBarcodeButton.addActionListener(e -> sortByBarcode());
+
+// Add buttons to the sort panel
+        sortPanel.add(sortByTitleButton);
+        sortPanel.add(sortByAuthorButton);
+        sortPanel.add(sortByBarcodeButton);
+
+// Add the sort panel to the bottom of the main frame
+        add(sortPanel, BorderLayout.SOUTH);
+
+// Enable checkbox rendering and editing for Boolean values in the table
+        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
+
+    }
+
+    private void initDetailsPanel() {
         // Right panel for CD details and buttons
         JPanel detailsPanel = new JPanel(new GridLayout(9, 2));
         titleField = new JTextField();
@@ -113,191 +194,146 @@ public class ArchiveConsole extends JFrame {
         add(detailsPanel, BorderLayout.EAST);
 
 
-        // Bottom panel using JSplitPane
-//        JSplitPane bottomPanel = new JSplitPane();
-//        bottomPanel.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-//        bottomPanel.setResizeWeight(0.5);  // Adjusts the weight for resizing
-        //JPanel bottomPanel = new JPanel(new BorderLayout());
-        JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        //JPanel leftPanel = new JPanel();
-        JPanel leftPanel = createLeftPanel();
+    }
 
-        leftPanel.setBackground(Color.LIGHT_GRAY); // Example color for visibility
-        bottomSplitPane.setLeftComponent(leftPanel); // Set left component
+    private void initTable() {
+        model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 7) return Boolean.class;
+                return super.getColumnClass(columnIndex);
+            }
+        };
 
-        // Right side panel for AutomationPanel
-//        AutomationPanel automationPanel = new AutomationPanel();
-//        bottomSplitPane.setRightComponent(automationPanel);
-
-        // Right side panel for AutomationPanel
-        JPanel automationPanel = createAutomationPanel(); // Ensure this is initialized
-
-        if (leftPanel != null) {
-            bottomSplitPane.setLeftComponent(leftPanel); // Set the left component
-        } else {
-            System.err.println("Error: Left panel is null.");
-        }
-        if (automationPanel != null) { // Null check for safety
-            bottomSplitPane.setRightComponent(automationPanel); // Set right component
-        } else {
-            System.err.println("Error: Automation panel is null.");
-        }
-        // Null check for safety
-        bottomSplitPane.setRightComponent(automationPanel); // Set right component
-
-        // Set resize weight to distribute space; e.g., 0.7 means 70% left, 30% right
-        bottomSplitPane.setResizeWeight(0.7);  // Adjusts the weight for resizing
-    // Add the custom automation panel to the right side of the split pane
-        //AutomationPanel automationPanel = new AutomationPanel();
-        //bottomSplitPane.setRightComponent(automationPanel);
-
-        // Add the bottom split pane to the main frame
-        add(bottomSplitPane, BorderLayout.SOUTH);
-
-
-
-        // Set resize weight to adjust space allocation between components
-        bottomSplitPane.setResizeWeight(0.7);
-
-        // Add the bottom split pane to the main frame
-       // add(bottomSplitPane, BorderLayout.SOUTH);
-
-        // Add the bottom split pane to the main frame
-        //add(bottomSplitPane, BorderLayout.SOUTH);
-
-        // Left side for log area
-        logArea = new JTextArea(10, 30);
-        logArea.setEditable(false);
-        JScrollPane logScrollPane = new JScrollPane(logArea);
-        bottomSplitPane.setLeftComponent(logScrollPane);
-
-        bottomSplitPane.setRightComponent(automationPanel);
-
-        // Add the bottom panel to the frame
-        add(bottomSplitPane, BorderLayout.SOUTH);
-
-
-        // Enable checkbox rendering and editing for Boolean values
-        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
-        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
-
-        // Bottom panel for sorting buttons with "Sort" text
-        JPanel sortPanel = new JPanel();
-        sortPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-
-        JLabel sortLabel = new JLabel("Sort:");
-        sortPanel.add(sortLabel);
-
-        // Bottom panel for sorting buttons
-        JButton sortByTitleButton = new JButton("By Title");
-        sortByTitleButton.addActionListener(e -> sortByTitle());
-        JButton sortByAuthorButton = new JButton("By Author");
-        sortByAuthorButton.addActionListener(e -> sortByAuthor());
-        JButton sortByBarcodeButton = new JButton("By Barcode");
-        sortByBarcodeButton.addActionListener(e -> sortByBarcode());
-
-        sortPanel.add(sortByTitleButton);
-        sortPanel.add(sortByAuthorButton);
-        sortPanel.add(sortByBarcodeButton);
-
-        add(sortPanel, BorderLayout.NORTH);
-
-        // Enable checkbox rendering and editing for Boolean values
-        table.getColumnModel().getColumn(7).setCellRenderer(table.getDefaultRenderer(Boolean.class));
-        table.getColumnModel().getColumn(7).setCellEditor(table.getDefaultEditor(Boolean.class));
+        // Initialize JTable with column headers
+        // model = new DefaultTableModel(new String[]{"Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan"}, 0);
+        table = new JTable(model);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                displayCDDetails(table.getSelectedRow());
+            }
+        });
+        JScrollPane tablePane = new JScrollPane(table);
+        add(tablePane, BorderLayout.CENTER);
 
     }
 
-    private JPanel createLeftPanel() {
+    private void initSearchPanel() {
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.add(new JLabel("Search String:"));
+        searchField = new JTextField(20);
+        searchPanel.add(searchField);
+
+        JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(e -> searchCDs());
+        searchPanel.add(searchButton);
+        add(searchPanel, BorderLayout.NORTH);
+    }
+
+
+
+
+
+private JPanel createLeftPanel() {
         JPanel leftPanel = new JPanel();
         leftPanel.setBackground(Color.LIGHT_GRAY);
         leftPanel.add(new JLabel("Left Panel Content"));
         return leftPanel;
     }
 
-    private JPanel createAutomationPanel() {
-        // Creating the panel for automation actions
-        JPanel automationPanel = new JPanel(new GridBagLayout());
+private JPanel createAutomationPanel() {
+    // Creating the panel for automation actions
+    JPanel automationPanel = new JPanel(new GridBagLayout());
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(5, 5, 5, 5);
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+
+    // Add labels and buttons as needed in your automation panel
+    JLabel label = new JLabel("Automation Action Request for the Item above:");
+    gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 0;
+    automationPanel.add(label, gbc);
+
+    // Row 1 buttons
+    JButton retrieveButton = new JButton("Retrieve");
+    gbc.gridwidth = 1; gbc.gridx = 0; gbc.gridy = 1;
+    automationPanel.add(retrieveButton, gbc);
+
+    JButton removeButton = new JButton("Remove");
+    gbc.gridx = 1; gbc.gridy = 1;
+    automationPanel.add(removeButton, gbc);
+
+    // Row 2 buttons
+    JButton returnButton = new JButton("Return");
+    gbc.gridx = 0; gbc.gridy = 2;
+    automationPanel.add(returnButton, gbc);
+
+    JButton addButton = new JButton("Add to Collection");
+    gbc.gridx = 1; gbc.gridy = 2;
+    automationPanel.add(addButton, gbc);
+
+    // Sort Section label and text field
+    JLabel sortLabel = new JLabel("Sort Section:");
+    gbc.gridx = 0; gbc.gridy = 3;
+    automationPanel.add(sortLabel, gbc);
+
+    JTextField sortField = new JTextField(5);
+    gbc.gridx = 1; gbc.gridy = 3;
+    automationPanel.add(sortField, gbc);
+
+    // Sort buttons
+    JButton randomSortButton = new JButton("Random Collection Sort");
+    gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 4;
+    automationPanel.add(randomSortButton, gbc);
+
+    JButton mostlySortedSortButton = new JButton("Mostly Sorted Sort");
+    gbc.gridy = 5;
+    automationPanel.add(mostlySortedSortButton, gbc);
+
+    JButton reverseOrderSortButton = new JButton("Reverse Order Sort");
+    gbc.gridy = 6;
+    automationPanel.add(reverseOrderSortButton, gbc);
+
+    return automationPanel;
+}
+
+
+private GridBagConstraints createGbc(int x, int y, int width){
         GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = x; gbc.gridy = y;
+        gbc.gridwidth = width;
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Add labels and buttons as needed in your automation panel
-        JLabel label = new JLabel("Automation Action Request for the Item above:");
-        gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 0;
-        automationPanel.add(label, gbc);
-
-        // Row 1 buttons
-        JButton retrieveButton = new JButton("Retrieve");
-        gbc.gridwidth = 1; gbc.gridx = 0; gbc.gridy = 1;
-        automationPanel.add(retrieveButton, gbc);
-
-        JButton removeButton = new JButton("Remove");
-        gbc.gridx = 1; gbc.gridy = 1;
-        automationPanel.add(removeButton, gbc);
-
-        // Row 2 buttons
-        JButton returnButton = new JButton("Return");
-        gbc.gridx = 0; gbc.gridy = 2;
-        automationPanel.add(returnButton, gbc);
-
-        JButton addButton = new JButton("Add to Collection");
-        gbc.gridx = 1; gbc.gridy = 2;
-        automationPanel.add(addButton, gbc);
-
-        // Sort Section label and text field
-        JLabel sortLabel = new JLabel("Sort Section:");
-        gbc.gridx = 0; gbc.gridy = 3;
-        automationPanel.add(sortLabel, gbc);
-
-        JTextField sortField = new JTextField(5);
-        gbc.gridx = 1; gbc.gridy = 3;
-        automationPanel.add(sortField, gbc);
-
-        // Sort buttons
-        JButton randomSortButton = new JButton("Random Collection Sort");
-        gbc.gridwidth = 2; gbc.gridx = 0; gbc.gridy = 4;
-        automationPanel.add(randomSortButton, gbc);
-
-        JButton mostlySortedSortButton = new JButton("Mostly Sorted Sort");
-        gbc.gridy = 5;
-        automationPanel.add(mostlySortedSortButton, gbc);
-
-        JButton reverseOrderSortButton = new JButton("Reverse Order Sort");
-        gbc.gridy = 6;
-        automationPanel.add(reverseOrderSortButton, gbc);
-
-        return automationPanel;
-    }
+        return gbc;
+}
 
 
+private void searchCDs() {
+    String searchText = searchField.getText().toLowerCase();  // Get the text entered in the search box and convert it to lowercase
+    model.setRowCount(0);  // Clear the table before displaying the search results
 
-    private void searchCDs() {
-        String searchText = searchField.getText().toLowerCase();  // Get the text entered in the search box and convert it to lowercase
-        model.setRowCount(0);  // Clear the table before displaying the search results
+    // Loop through the cdList and add rows that match the search criteria to the table
+    for (CD cd : cdList) {
+        // Check if the search text is contained in the title, author, section, or description (case-insensitive)
+        if (cd.getTitle().toLowerCase().contains(searchText) ||
+                cd.getAuthor().toLowerCase().contains(searchText) ||
+                cd.getSection().toLowerCase().contains(searchText) ||
+                cd.getDescription().toLowerCase().contains(searchText)) {
 
-        // Loop through the cdList and add rows that match the search criteria to the table
-        for (CD cd : cdList) {
-            // Check if the search text is contained in the title, author, section, or description (case-insensitive)
-            if (cd.getTitle().toLowerCase().contains(searchText) ||
-                    cd.getAuthor().toLowerCase().contains(searchText) ||
-                    cd.getSection().toLowerCase().contains(searchText) ||
-                    cd.getDescription().toLowerCase().contains(searchText)) {
-
-                // Add the matching CD details to the table
-                model.addRow(new Object[]{
-                        cd.getTitle(),
-                        cd.getAuthor(),
-                        cd.getSection(),
-                        cd.getX(),
-                        cd.getY(),
-                        cd.getBarcode(),
-                        cd.getDescription(),
-                        cd.isOnLoan()
-                });
-            }
+            // Add the matching CD details to the table
+            model.addRow(new Object[]{
+                    cd.getTitle(),
+                    cd.getAuthor(),
+                    cd.getSection(),
+                    cd.getX(),
+                    cd.getY(),
+                    cd.getBarcode(),
+                    cd.getDescription(),
+                    cd.isOnLoan()
+            });
         }
     }
+}
 
 
     private void loadDataFromFile(String fileName) {
@@ -325,8 +361,8 @@ public class ArchiveConsole extends JFrame {
                     // Create a CD object and add it to the list
                     CD cd = new CD(title, author, section, x, y, barcode, description, onLoan);
                     cdList.add(cd);
-                    model.addRow(new Object[]{title, author, section, x, y, barcode, description, onLoan});
-
+                    //model.addRow(new Object[]{title, author, section, x, y, barcode, description, onLoan});
+                    addCDToTable(cd);
                     System.out.println("CD added: " + cd);
                 } else {
                     System.out.println("Invalid data: " + line);  // Log invalid lines for debugging
@@ -337,8 +373,16 @@ public class ArchiveConsole extends JFrame {
         }
     }
 
+    private void addCDToTable(CD cd){
+        model.addRow(new Object[]{
+            cd.getTitle(), cd.getAuthor(), cd.getSection(), cd.getX(), cd.getY(), cd.getBarcode(), cd.getDescription(),cd.isOnLoan()
+        });
+    }
+
+
 
     private void displayCDDetails(int index) {
+        if(index < 0 || index >= cdList.size()) return;
         // Display selected CD's details in text fields
         CD cd = cdList.get(index);
         titleField.setText(cd.getTitle());
@@ -415,9 +459,12 @@ public class ArchiveConsole extends JFrame {
             model.addRow(new Object[]{cd.getTitle(), cd.getAuthor(), cd.getSection(), cd.getX(), cd.getY(), cd.getBarcode(), cd.getDescription(), cd.isOnLoan()});
         }
     }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new ArchiveConsole().setVisible(true));
+    public void logAutomation(String s) {
+        processLogPanel.logMessage(s);
+    }
+  public static void main(String[] args) {
+        ArchiveConsole archiveConsole = new ArchiveConsole();
+      archiveConsole.setVisible(true);
     }
 }
 
