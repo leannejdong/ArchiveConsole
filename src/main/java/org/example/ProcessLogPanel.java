@@ -14,7 +14,7 @@ public class ProcessLogPanel extends JPanel {
         add(logScrollPane, BorderLayout.CENTER);
     }
 
-    public void logMessage(String message) {
+    public void addLog(String message) {
         logArea.append(message + "\n");
     }
 }
