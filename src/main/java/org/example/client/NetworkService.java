@@ -1,9 +1,12 @@
-package org.example;
+package org.example.client;
+
+import org.example.model.CD;
+import org.example.model.CDTableModel;
 
 import java.util.List;
 import java.io.IOException;
 
-public class NetworkService {
+public class  NetworkService {
     private String serverUrl;
 
     public NetworkService(String serverUrl) {
