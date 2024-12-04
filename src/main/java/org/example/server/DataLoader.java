@@ -1,5 +1,6 @@
-package org.example;
+package org.example.server;
 
+import org.example.model.CD;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;

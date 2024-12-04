@@ -1,4 +1,5 @@
-package org.example;
+package org.example.server;
+import org.example.model.CD;
 
 import java.util.Collections;
 import java.util.List;

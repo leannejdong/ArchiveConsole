@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 
 
 // Class to represent a CD entry

@@ -1,6 +1,11 @@
-package org.example;
+package org.example.server;
 
+import org.example.model.CDTableModel;
+import org.example.model.CD;
 import java.util.List;
+import java.util.ArrayList;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 public class ArchiveConsoleServer {
     private List<CD> cds;
@@ -8,12 +13,10 @@ public class ArchiveConsoleServer {
 
     public ArchiveConsoleServer() {
         try {
-            // Load data from file using DataLoader
-            List<CD> cds = DataLoader.loadData("data.txt");
-
             // Initialize CDTableModel and load data into it
             CDTableModel tableModel = new CDTableModel("data.txt");
-           // tableModel.loadData(cds);
+            cds = tableModel.getCds();
+
 
             // Initialize ProcessLogPanel
             logPanel = new ProcessLogPanel();
@@ -54,6 +57,11 @@ public class ArchiveConsoleServer {
             e.printStackTrace();
         }
     }
+
+    public ProcessLogPanel getLogPanel() {
+        return logPanel;
+    }
+
     public static void main(String[] args) {
         ArchiveConsoleServer server = new ArchiveConsoleServer();
         server.startServer();

@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -8,21 +8,62 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 public class CDTableModel extends AbstractTableModel {
-    private List<CD> cdList;
+    private List<CD> cds;
+    private String[] columnNames = {"Title", "Author", "Genre", "Year", "Track Count", "Duration", "Label", "Favorite"};
 
     // Constructor to initialize with a file path
     public CDTableModel(String filePath) throws IOException {
-        this.cdList = DataLoader.loadData(filePath);  // Call DataLoader to load data from the file
+        this.cds = loadData(filePath);  // Call DataLoader to load data from the file
     }
 
-    // No need to call loadData here as we have already loaded data in the constructor
-    public List<CD> getCds() {
-        return cdList ;
+    // Constructor to accept an existing List<CD>
+    public CDTableModel(List<CD> cds) {
+        this.cds = cds;
     }
-    private String[] columnNames = { "Title", "Author", "Section", "X", "Y", "Barcode", "Description", "On Loan" };
 
 
-    // Load new data into the model and notify JTable
+    @Override
+    public int getRowCount() {
+        return cds.size();  // Number of rows is the size of the CD list
+    }
+
+    @Override
+    public int getColumnCount() {
+        return columnNames.length;  // Number of columns
+    }
+
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        CD cd = cds.get(rowIndex);
+        switch (columnIndex) {
+            case 0:
+                return cd.getTitle();
+            case 1:
+                return cd.getAuthor();
+            case 2:
+                return cd.getSection();
+            case 3:
+                return cd.getX();
+            case 4:
+                return cd.getY();
+            case 5:
+                return cd.getBarcode();
+            case 6:
+                return cd.getDescription();
+            case 7:
+                return cd.isOnLoan() ? "Yes" : "No";
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public String getColumnName(int column) {
+        return columnNames[column];  // Return the name of each column
+    }
+
+
+    // Static helper method to load data from a file
     public static List<CD> loadData(String filePath) throws IOException {
         List<CD> cds = new ArrayList<>();
 
@@ -35,18 +76,13 @@ public class CDTableModel extends AbstractTableModel {
                     String title = parts[0].trim();
                     String artist = parts[1].trim();
                     String genre = parts[2].trim();
-                    String yearStr = parts[3].trim();
-                    String trackCountStr = parts[4].trim();
-                    String durationStr = parts[5].trim();
+                    int year = Integer.parseInt(parts[3].trim());
+                    int trackCount = Integer.parseInt(parts[4].trim());
+                    String duration = parts[5].trim();
                     String label = parts[6].trim();
-                    String isFavoriteStr = parts[7].trim();
+                    boolean isFavorite = Boolean.parseBoolean(parts[7].trim());
 
-                    int year = Integer.parseInt(yearStr);
-                    int trackCount = Integer.parseInt(trackCountStr);
-                    long duration = Long.parseLong(durationStr);
-                    boolean isFavorite = Boolean.parseBoolean(isFavoriteStr);
-
-                    cds.add(new CD(title, artist, genre, year, trackCount, duration, label, isFavorite));
+                    cds.add(new CD(title, artist, genre, year, trackCount, Long.parseLong(duration), label, isFavorite));
                 }
             }
         }
@@ -54,34 +90,8 @@ public class CDTableModel extends AbstractTableModel {
         return cds;
     }
 
-    @Override
-    public int getRowCount() {
-        return cdList.size();  // Number of rows is the size of the CD list
+    public List<CD> getCds() {
+        return cds;
     }
 
-    @Override
-    public int getColumnCount() {
-        return columnNames.length;  // Number of columns
-    }
-
-    @Override
-    public Object getValueAt(int rowIndex, int columnIndex) {
-        CD cd = cdList.get(rowIndex);
-        switch (columnIndex) {
-            case 0: return cd.getTitle();
-            case 1: return cd.getAuthor();
-            case 2: return cd.getSection();
-            case 3: return cd.getX();
-            case 4: return cd.getY();
-            case 5: return cd.getBarcode();
-            case 6: return cd.getDescription();
-            case 7: return cd.isOnLoan() ? "Yes" : "No";
-            default: return null;
-        }
-    }
-
-    @Override
-    public String getColumnName(int column) {
-        return columnNames[column];  // Return the name of each column
-    }
 }

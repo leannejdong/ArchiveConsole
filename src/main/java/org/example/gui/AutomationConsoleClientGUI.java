@@ -1,11 +1,14 @@
 package org.example.gui;
 
+import org.example.model.CD;
+import org.example.model.CDTableModel;
 import org.example.client.NetworkService;
-import org.example.client.CDTableModel;
-
+import org.example.server.ProcessLogPanel;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.util.List;
+
 
 /**
  * The AutomationConsoleClientGUI class provides a graphical user interface (GUI) for the client-side application.
@@ -47,8 +50,8 @@ public class AutomationConsoleClientGUI extends JFrame {
      */
     private void fetchAndDisplayCDs() {
         try {
-            List<CD> cds = networkService.getCDs();
-            CDTableModel tableModel = new CDTableModel(cds);
+           // List<CD> cds = networkService.getCDs();
+            CDTableModel tableModel = new CDTableModel("data.txt");
             cdTable.setModel(tableModel);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Failed to fetch data from server", "Error", JOptionPane.ERROR_MESSAGE);
